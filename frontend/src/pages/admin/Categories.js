@@ -352,6 +352,7 @@ const Categories = () => {
                     <div className="h-28 flex flex-col items-center justify-center gap-1.5">
                       <FiUpload size={20} className="text-gray-400"/>
                       <p className="text-sm text-gray-500">Upload image</p>
+                      <p className='text-sm text-red-400'>Maximum file size allowed is 5MB</p>
                     </div>
                   )}
                   <input type="file" accept="image/*" onChange={handleImageChange} className="hidden"/>
