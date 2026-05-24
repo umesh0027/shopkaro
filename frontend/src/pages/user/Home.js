@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiTruck, FiShield, FiRefreshCw, FiHeadphones, FiStar } from 'react-icons/fi';
 import { HiSparkles, HiArrowRight } from 'react-icons/hi2';
 import { productAPI, categoryAPI } from '../../services/api';
+import { bundleAPI } from '../../services/api';
 import ProductCard from '../../components/common/ProductCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -38,6 +39,83 @@ function MarqueeStrip() {
   );
 }
 
+/* ── Bundle Shimmer Skeleton ── */
+const BundleCardSkeleton = () => (
+  <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+    <div className="bundle-shimmer h-36 w-full" />
+    <div className="p-4 space-y-3">
+      <div className="bundle-shimmer h-4 w-3/4" />
+      <div className="bundle-shimmer h-3 w-full" />
+      <div className="flex gap-2">
+        <div className="bundle-shimmer h-6 w-20" />
+        <div className="bundle-shimmer h-6 w-20" />
+      </div>
+      <div className="bundle-shimmer h-9 w-full mt-2" />
+    </div>
+  </div>
+);
+
+/* ── Bundle Card ── */
+const BundleCard = ({ bundle }) => (
+  <div className="bg-white rounded-2xl overflow-hidden shadow-sm border-2 border-transparent hover:border-primary-100 hover:shadow-lg transition-all duration-300 group">
+    {/* Image / product grid */}
+    <div className="h-36 bg-gray-50 relative overflow-hidden">
+      {bundle.image?.url ? (
+        <img src={bundle.image.url} alt={bundle.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      ) : (
+        <div className="w-full h-full grid grid-cols-3 gap-1.5 p-2.5">
+          {(bundle.products || []).slice(0, 3).map((item, i) => (
+            <div key={i} className="rounded-xl overflow-hidden bg-white shadow-sm">
+              <img src={item.product?.images?.[0]?.url} alt=""
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Savings badge */}
+      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+        {bundle.savingsPercent}% OFF
+      </div>
+      {bundle.isFeatured && (
+        <div className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+          <HiSparkles size={10} /> Featured
+        </div>
+      )}
+    </div>
+
+    <div className="p-4">
+      <h3 className="font-bold text-gray-900 mb-1 truncate">{bundle.name}</h3>
+      {bundle.description && (
+        <p className="text-xs text-gray-400 line-clamp-1 mb-2">{bundle.description}</p>
+      )}
+
+      {/* Products pills */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        {(bundle.products || []).map((item, i) => (
+          <span key={i}
+            className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
+            {item.product?.name?.split(' ').slice(0, 5).join(' ')}
+            {item.quantity > 1 ? ` ×${item.quantity}` : ''}
+          </span>
+        ))}
+      </div>
+
+      {/* Price row */}
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-lg font-bold text-gray-900">₹{bundle.bundlePrice?.toLocaleString()}</span>
+        <span className="text-sm text-gray-400 line-through">₹{bundle.originalPrice?.toLocaleString()}</span>
+        <span className="text-xs text-green-600 font-bold">Save ₹{bundle.savingsAmount?.toLocaleString()}</span>
+      </div>
+
+      <Link to={`/bundles/${bundle._id}`}
+        className="block w-full text-center bg-gradient-to-br from-pink-400 to-yellow-500 hover:from-pink-300 hover:to-yellow-400 text-white font-semibold py-2.5 rounded-xl transition-all active:scale-95 text-sm">
+        View Bundle →
+      </Link>
+    </div>
+  </div>
+);
+
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -71,6 +149,12 @@ const Home = () => {
       }
     };
     fetchData();
+
+     // 👇 Bundles alag fetch — agar fail bhi ho to page nahi rukta
+    bundleAPI.getAll({ featured: true, limit: 4 })
+      .then(({ data }) => setBundles(data.bundles || []))
+      .catch(() => setBundles([]))
+      .finally(() => setBundlesLoading(false));
   }, []);
 
   // if (loading) return <div className="pt-16"><LoadingSpinner /></div>;
@@ -320,6 +404,62 @@ const Home = () => {
     </div>
   </div>
 </section>
+
+  {/* ════════════════════════════════════════
+          COMBO OFFERS SECTION  🎁
+      ════════════════════════════════════════ */}
+      {(bundlesLoading || bundles.length > 0) && (
+        <section className="py-16 bg-gray-50">
+          <div className="page-container">
+            {/* Header */}
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                {/* <div className="inline-flex items-center gap-2 bg-accent-400 text-white px-3 py-1 rounded-full text-xl font-bold tracking-wide mb-2">
+                  <FiPackage size={40} /> COMBO OFFERS
+                </div> */}
+                <div className="relative inline-flex items-center gap-3 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-400 text-white px-5 py-2 rounded-full text-xl font-bold tracking-wide mb-3 overflow-hidden">
+
+  {/* ✨ Sparkle dots */}
+  <span className="absolute w-2 h-2 bg-white rounded-full top-1 left-3 animate-ping"></span>
+  <span className="absolute w-2 h-2 bg-white rounded-full bottom-1 right-4 animate-ping delay-200"></span>
+  <span className="absolute w-1.5 h-1.5 bg-white rounded-full top-2 right-8 animate-ping delay-500"></span>
+
+  {/* 🎉 Icon with bounce */}
+  <FiPackage size={40} className="animate-bounce" />
+
+  {/* 🎊 Text */}
+  <span className="relative z-10 text-xl">🎉 COMBO OFFERS 🎉</span>
+</div>
+                <h2 className="section-title">🎁 Frequently Bought Together</h2>
+                <p className="text-sm text-gray-500 mt-1">Save more when you buy as a bundle</p>
+              </div>
+              {!bundlesLoading && bundles.length > 0 && (
+                <Link to="/bundles"
+                  className="hidden sm:inline-flex items-center gap-2 text-sm text-primary-600 font-semibold hover:text-primary-700 transition-colors group">
+                  View All <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              )}
+            </div>
+
+            {/* Cards */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {bundlesLoading
+                ? [...Array(4)].map((_, i) => <BundleCardSkeleton key={i} />)
+                : bundles.map(bundle => <BundleCard key={bundle._id} bundle={bundle} />)
+              }
+            </div>
+
+            {/* Mobile "View All" link */}
+            {!bundlesLoading && bundles.length > 0 && (
+              <div className="text-center mt-6 sm:hidden">
+                <Link to="/bundles" className="text-primary-600 font-semibold text-sm">
+                  View All Combo Offers →
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Banner */}
       <section className="py-8 bg-gray-50">
